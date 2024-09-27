@@ -1,0 +1,94 @@
+
+/shared/cse502/tests/wp2/prog1.o:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000000000000 <.text>:
+   0:	fa010113          	addi	sp,sp,-96
+   4:	04900413          	li	s0,73
+   8:	04600493          	li	s1,70
+   c:	04d00513          	li	a0,77
+  10:	04d00593          	li	a1,77
+  14:	05000613          	li	a2,80
+  18:	02100693          	li	a3,33
+  1c:	05800713          	li	a4,88
+  20:	05000793          	li	a5,80
+  24:	05300813          	li	a6,83
+  28:	04d00893          	li	a7,77
+  2c:	04500913          	li	s2,69
+  30:	02200993          	li	s3,34
+  34:	0ff47313          	andi	t1,s0,255
+  38:	fff3031b          	addiw	t1,t1,-1
+  3c:	0ff37313          	andi	t1,t1,255
+  40:	00030a13          	mv	s4,t1
+  44:	0ff4f313          	andi	t1,s1,255
+  48:	fff3031b          	addiw	t1,t1,-1
+  4c:	0ff37313          	andi	t1,t1,255
+  50:	00030a93          	mv	s5,t1
+  54:	0ff57513          	andi	a0,a0,255
+  58:	fff5051b          	addiw	a0,a0,-1
+  5c:	0ff57513          	andi	a0,a0,255
+  60:	00050b13          	mv	s6,a0
+  64:	0ff5f593          	andi	a1,a1,255
+  68:	fff5859b          	addiw	a1,a1,-1
+  6c:	0ff5f593          	andi	a1,a1,255
+  70:	00058b93          	mv	s7,a1
+  74:	0ff67613          	andi	a2,a2,255
+  78:	fff6061b          	addiw	a2,a2,-1
+  7c:	0ff67613          	andi	a2,a2,255
+  80:	00060c13          	mv	s8,a2
+  84:	0ff6f693          	andi	a3,a3,255
+  88:	fff6869b          	addiw	a3,a3,-1
+  8c:	0ff6f693          	andi	a3,a3,255
+  90:	00068c93          	mv	s9,a3
+  94:	0ff77713          	andi	a4,a4,255
+  98:	fff7071b          	addiw	a4,a4,-1
+  9c:	0ff77713          	andi	a4,a4,255
+  a0:	00070d13          	mv	s10,a4
+  a4:	0ff7f793          	andi	a5,a5,255
+  a8:	fff7879b          	addiw	a5,a5,-1
+  ac:	0ff7f793          	andi	a5,a5,255
+  b0:	00078d93          	mv	s11,a5
+  b4:	0ff87793          	andi	a5,a6,255
+  b8:	fff7879b          	addiw	a5,a5,-1
+  bc:	0ff7f793          	andi	a5,a5,255
+  c0:	00078e13          	mv	t3,a5
+  c4:	0ff8f793          	andi	a5,a7,255
+  c8:	fff7879b          	addiw	a5,a5,-1
+  cc:	0ff7f793          	andi	a5,a5,255
+  d0:	00078e93          	mv	t4,a5
+  d4:	0ff97793          	andi	a5,s2,255
+  d8:	fff7879b          	addiw	a5,a5,-1
+  dc:	0ff7f793          	andi	a5,a5,255
+  e0:	00078f13          	mv	t5,a5
+  e4:	0ff9f793          	andi	a5,s3,255
+  e8:	fff7879b          	addiw	a5,a5,-1
+  ec:	0ff7f793          	andi	a5,a5,255
+  f0:	00078f93          	mv	t6,a5
+  f4:	00000013          	nop
+  f8:	06010113          	addi	sp,sp,96
+  fc:	00008067          	ret
+
+Disassembly of section .comment:
+
+0000000000000000 <.comment>:
+   0:	4700                	lw	s0,8(a4)
+   2:	203a4343          	fmadd.s	ft6,fs4,ft3,ft4,rmm
+   6:	4728                	lw	a0,72(a4)
+   8:	554e                	lw	a0,240(sp)
+   a:	2029                	0x2029
+   c:	2e302e37          	lui	t3,0x2e302
+  10:	2030                	fld	fa2,64(s0)
+  12:	3032                	fld	ft0,296(sp)
+  14:	3731                	addiw	a4,a4,-20
+  16:	3130                	fld	fa2,96(a0)
+  18:	3031                	0x3031
+  1a:	2820                	fld	fs0,80(s0)
+  1c:	7865                	lui	a6,0xffff9
+  1e:	6570                	ld	a2,200(a0)
+  20:	6972                	ld	s2,280(sp)
+  22:	656d                	lui	a0,0x1b
+  24:	746e                	ld	s0,248(sp)
+  26:	6c61                	lui	s8,0x18
+  28:	0029                	0x29

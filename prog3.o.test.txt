@@ -1,0 +1,82 @@
+
+/shared/cse502/tests/wp2/prog3.o:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000000000000 <.text>:
+   0:	fe010113          	addi	sp,sp,-32
+   4:	00a00093          	li	ra,10
+   8:	01400113          	li	sp,20
+   c:	01e00193          	li	gp,30
+  10:	02800213          	li	tp,40
+  14:	00500293          	li	t0,5
+  18:	00600313          	li	t1,6
+  1c:	00700393          	li	t2,7
+  20:	00800413          	li	s0,8
+  24:	00008713          	mv	a4,ra
+  28:	00028793          	mv	a5,t0
+  2c:	02f7073b          	mulw	a4,a4,a5
+  30:	00010693          	mv	a3,sp
+  34:	00038793          	mv	a5,t2
+  38:	02f687bb          	mulw	a5,a3,a5
+  3c:	00f707bb          	addw	a5,a4,a5
+  40:	00078493          	mv	s1,a5
+  44:	00008713          	mv	a4,ra
+  48:	00030793          	mv	a5,t1
+  4c:	02f7073b          	mulw	a4,a4,a5
+  50:	00010693          	mv	a3,sp
+  54:	00040793          	mv	a5,s0
+  58:	02f687bb          	mulw	a5,a3,a5
+  5c:	00f707bb          	addw	a5,a4,a5
+  60:	00078513          	mv	a0,a5
+  64:	00018713          	mv	a4,gp
+  68:	00028793          	mv	a5,t0
+  6c:	02f7073b          	mulw	a4,a4,a5
+  70:	00020693          	mv	a3,tp
+  74:	00038793          	mv	a5,t2
+  78:	02f687bb          	mulw	a5,a3,a5
+  7c:	00f707bb          	addw	a5,a4,a5
+  80:	00078593          	mv	a1,a5
+  84:	00018713          	mv	a4,gp
+  88:	00030793          	mv	a5,t1
+  8c:	02f7073b          	mulw	a4,a4,a5
+  90:	00020693          	mv	a3,tp
+  94:	00040793          	mv	a5,s0
+  98:	02f687bb          	mulw	a5,a3,a5
+  9c:	00f707bb          	addw	a5,a4,a5
+  a0:	00078613          	mv	a2,a5
+  a4:	00048713          	mv	a4,s1
+  a8:	00060793          	mv	a5,a2
+  ac:	02f7073b          	mulw	a4,a4,a5
+  b0:	00050693          	mv	a3,a0
+  b4:	00058793          	mv	a5,a1
+  b8:	02f687bb          	mulw	a5,a3,a5
+  bc:	40f707bb          	subw	a5,a4,a5
+  c0:	00078f93          	mv	t6,a5
+  c4:	00000013          	nop
+  c8:	02010113          	addi	sp,sp,32
+  cc:	00008067          	ret
+
+Disassembly of section .comment:
+
+0000000000000000 <.comment>:
+   0:	4700                	lw	s0,8(a4)
+   2:	203a4343          	fmadd.s	ft6,fs4,ft3,ft4,rmm
+   6:	4728                	lw	a0,72(a4)
+   8:	554e                	lw	a0,240(sp)
+   a:	2029                	0x2029
+   c:	2e302e37          	lui	t3,0x2e302
+  10:	2030                	fld	fa2,64(s0)
+  12:	3032                	fld	ft0,296(sp)
+  14:	3731                	addiw	a4,a4,-20
+  16:	3130                	fld	fa2,96(a0)
+  18:	3031                	0x3031
+  1a:	2820                	fld	fs0,80(s0)
+  1c:	7865                	lui	a6,0xffff9
+  1e:	6570                	ld	a2,200(a0)
+  20:	6972                	ld	s2,280(sp)
+  22:	656d                	lui	a0,0x1b
+  24:	746e                	ld	s0,248(sp)
+  26:	6c61                	lui	s8,0x18
+  28:	0029                	0x29

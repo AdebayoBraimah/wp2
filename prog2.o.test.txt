@@ -1,0 +1,58 @@
+
+/shared/cse502/tests/wp2/prog2.o:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000000000000 <.text>:
+   0:	ff010113          	addi	sp,sp,-16
+   4:	00a00413          	li	s0,10
+   8:	00900493          	li	s1,9
+   c:	00800513          	li	a0,8
+  10:	00700593          	li	a1,7
+  14:	00600613          	li	a2,6
+  18:	00500693          	li	a3,5
+  1c:	00400713          	li	a4,4
+  20:	00300793          	li	a5,3
+  24:	00200813          	li	a6,2
+  28:	00100893          	li	a7,1
+  2c:	00040e13          	mv	t3,s0
+  30:	00048313          	mv	t1,s1
+  34:	006e033b          	addw	t1,t3,t1
+  38:	00a3053b          	addw	a0,t1,a0
+  3c:	00b505bb          	addw	a1,a0,a1
+  40:	00c5863b          	addw	a2,a1,a2
+  44:	00d606bb          	addw	a3,a2,a3
+  48:	00e6873b          	addw	a4,a3,a4
+  4c:	00f707bb          	addw	a5,a4,a5
+  50:	00080713          	mv	a4,a6
+  54:	00e787bb          	addw	a5,a5,a4
+  58:	00088713          	mv	a4,a7
+  5c:	00e787bb          	addw	a5,a5,a4
+  60:	00078f93          	mv	t6,a5
+  64:	00000013          	nop
+  68:	01010113          	addi	sp,sp,16
+  6c:	00008067          	ret
+
+Disassembly of section .comment:
+
+0000000000000000 <.comment>:
+   0:	4700                	lw	s0,8(a4)
+   2:	203a4343          	fmadd.s	ft6,fs4,ft3,ft4,rmm
+   6:	4728                	lw	a0,72(a4)
+   8:	554e                	lw	a0,240(sp)
+   a:	2029                	0x2029
+   c:	2e302e37          	lui	t3,0x2e302
+  10:	2030                	fld	fa2,64(s0)
+  12:	3032                	fld	ft0,296(sp)
+  14:	3731                	addiw	a4,a4,-20
+  16:	3130                	fld	fa2,96(a0)
+  18:	3031                	0x3031
+  1a:	2820                	fld	fs0,80(s0)
+  1c:	7865                	lui	a6,0xffff9
+  1e:	6570                	ld	a2,200(a0)
+  20:	6972                	ld	s2,280(sp)
+  22:	656d                	lui	a0,0x1b
+  24:	746e                	ld	s0,248(sp)
+  26:	6c61                	lui	s8,0x18
+  28:	0029                	0x29
