@@ -1,6 +1,8 @@
 .PHONY: all run clean submit
 
-PROG=/shared/cse502/tests/wp1/prog1.o
+# PROG=/shared/cse502/tests/wp2/prog1.o
+# PROG=/shared/cse502/tests/wp2/prog2.o
+PROG=/shared/cse502/tests/wp2/prog3.o
 #PROG=/shared/cse502/tests/bbl.bin
 
 TRACE?=--trace
