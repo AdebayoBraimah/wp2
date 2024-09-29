@@ -532,6 +532,9 @@ module top
           default: $display("Unknown instruction: 0x%x", instruction);
         endcase
 
+        // NOTE: Commented this section out for visual comparison
+        //    test progX.o test cases
+        // 
         for (count = 0; count < 32; count = count + 1) begin
           $display("r%0d: %h", count, registers[count]);
         end
