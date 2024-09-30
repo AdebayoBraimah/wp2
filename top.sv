@@ -72,6 +72,7 @@ module top
   logic [31:0] instruction_low;
 
   logic [63:0] registers [0:31];
+  logic [63:0] registers_temp [0:31];
 
   logic [4:0] temp5;
   logic [11:0] temp12;
@@ -79,11 +80,25 @@ module top
   logic [63:0] temp64;
   logic [63:0] temp_result;
 
+  logic [63:0] result;
+  logic [4:0] rd;
+  logic write_enable;
+
+  integer count;
+
   task decode_instruction;
     input [31:0] instruction;
     input [63:0] pc;
-    $display("Display: %x", instruction);
+    input logic [63:0] registers_temp [0:31];
+    output logic [63:0] result;
+    output logic [4:0] rd;
+    output logic write_enable;
     begin
+      $display("Display: %x", instruction);
+      write_enable = 0;
+      result = 64'b0;
+      rd = 5'b0;
+
       if (instruction == 32'b0) begin
         //$display("Terminating.");
         $finish;
@@ -100,6 +115,7 @@ module top
               3'b110: $display("%x: LWU r%0d", pc, instruction[11:7]);
               3'b011: $display("%x: LD r%0d", pc, instruction[11:7]);
             endcase
+            write_enable = 0;
           end
           7'b0010011: begin
             case (instruction[14:12])
@@ -109,7 +125,9 @@ module top
                 $display("%x: ADDI r%0d", pc, instruction[11:7]);
                 temp12 = instruction[31:20];
                 temp64 = {{52{instruction[31]}}, temp12};
-                registers[instruction[11:7]] <= registers[instruction[19:15]] + temp64;
+                result = registers_temp[instruction[19:15]] + temp64;
+                rd = instruction[11:7];
+                write_enable = 1;
               end
               3'b010: begin
                 // [31:20] imm [19:15] rs1 [11:7] rd
@@ -118,11 +136,13 @@ module top
                 temp12 = instruction[31:20];
                 temp64 = {{52{instruction[31]}}, temp12};
 
-                if ($signed(registers[instruction[19:15]]) < $signed(temp64)) begin
-                  registers[instruction[11:7]] <= 64'b1;
+                if ($signed(registers_temp[instruction[19:15]]) < $signed(temp64)) begin
+                  result = 64'b1;
                 end else begin
-                  registers[instruction[11:7]] <= 64'b0;
+                  result = 64'b0;
                 end
+                rd = instruction[11:7];
+                write_enable = 1;
               end
               3'b011: begin
                 // [31:20] imm [19:15] rs1 [11:7] rd
@@ -131,11 +151,13 @@ module top
                 temp12 = instruction[31:20];
                 temp64 = {{52{instruction[31]}}, temp12};
 
-                if ($unsigned(registers[instruction[19:15]]) < $unsigned(temp64)) begin
-                  registers[instruction[11:7]] <= 64'b1;
+                if ($unsigned(registers_temp[instruction[19:15]]) < $unsigned(temp64)) begin
+                  result = 64'b1;
                 end else begin
-                  registers[instruction[11:7]] <= 64'b0;
+                  result = 64'b0;
                 end
+                rd = instruction[11:7];
+                write_enable = 1;
               end
               3'b100: begin
                 // [31:20] imm [19:15] rs1 [11:7] rd
@@ -144,7 +166,9 @@ module top
                 temp12 = instruction[31:20];
                 temp64 = {{52{instruction[31]}}, temp12};
 
-                registers[instruction[11:7]] <= registers[instruction[19:15]] ^ temp64;
+                result = registers_temp[instruction[19:15]] ^ temp64;
+                rd = instruction[11:7];
+                write_enable = 1;
               end
               3'b110: begin
                 // [31:20] imm [19:15] rs1 [11:7] rd
@@ -153,7 +177,9 @@ module top
                 temp12 = instruction[31:20];
                 temp64 = {{52{instruction[31]}}, temp12};
 
-                registers[instruction[11:7]] <= registers[instruction[19:15]] | temp64;
+                result = registers_temp[instruction[19:15]] | temp64;
+                rd = instruction[11:7];
+                write_enable = 1;
               end
               3'b111: begin
                 // [31:20] imm [19:15] rs1 [11:7] rd
@@ -162,7 +188,9 @@ module top
                 temp12 = instruction[31:20];
                 temp64 = {{52{instruction[31]}}, temp12};
 
-                registers[instruction[11:7]] <= registers[instruction[19:15]] & temp64;
+                result = registers_temp[instruction[19:15]] & temp64;
+                rd = instruction[11:7];
+                write_enable = 1;
               end
               3'b001: begin
                 // [24:20] shamt [19:15] rs1 [11:7] rd
@@ -170,7 +198,9 @@ module top
                 $display("%x: SLLI r%0d", pc, instruction[11:7]);
                 temp5 = instruction[24:20];
 
-                registers[instruction[11:7]] <= registers[instruction[19:15]] << temp5;
+                result = registers_temp[instruction[19:15]] << temp5;
+                rd = instruction[11:7];
+                write_enable = 1;
               end
               3'b101: begin
                 if (instruction[31:25] == 7'b0000000) begin
@@ -179,14 +209,18 @@ module top
                   $display("%x: SRLI r%0d", pc, instruction[11:7]);
                   temp5 = instruction[24:20];
 
-                  registers[instruction[11:7]] <= registers[instruction[19:15]] >> temp5;
+                  result = registers_temp[instruction[19:15]] >> temp5;
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0100000) begin
                   // [24:20] shamt [19:15] rs1 [11:7] rd
                   // rd = rs1 >>> shamt (arithmetic shift)
                   $display("%x: SRAI r%0d", pc, instruction[11:7]);
                   temp5 = instruction[24:20];
 
-                  registers[instruction[11:7]] <= $signed(registers[instruction[19:15]]) >>> temp5;
+                  result = $signed(registers_temp[instruction[19:15]]) >>> temp5;
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end
               end
             endcase
@@ -198,7 +232,9 @@ module top
             temp20 = instruction[31:12];
             temp64 = {temp20, 12'b0};
 
-            registers[instruction[11:7]] <= pc + temp64;
+            result = pc + temp64;
+            rd = instruction[11:7];
+            write_enable = 1;
           end
           7'b0011011: begin
             case (instruction[14:12])
@@ -208,18 +244,22 @@ module top
                 $display("%x: ADDIW r%0d", pc, instruction[11:7]);
                 temp12 = instruction[31:20];
                 temp64 = {{52{instruction[31]}}, temp12};
-                temp_result = registers[instruction[19:15]] + temp64;
+                temp_result = registers_temp[instruction[19:15]] + temp64;
 
-                registers[instruction[11:7]] <= $signed(temp_result[31:0]);
+                result = $signed(temp_result[31:0]);
+                rd = instruction[11:7];
+                write_enable = 1;
               end
               3'b001: begin
                 // [24:20] shamt [19:15] rs1 [11:7] rd
                 // rd = (rs1 << shamt)[31:0]
                 $display("%x: SLLIW r%0d", pc, instruction[11:7]);
                 temp5 = instruction[24:20];
-                temp_result = registers[instruction[19:15]] << temp5;
+                temp_result = registers_temp[instruction[19:15]] << temp5;
 
-                registers[instruction[11:7]] <= $signed(temp_result[31:0]);
+                result = $signed(temp_result[31:0]);
+                rd = instruction[11:7];
+                write_enable = 1;
               end
               3'b101: begin
                 if (instruction[31:25] == 7'b0000000) begin
@@ -227,17 +267,21 @@ module top
                   // rd = (rs1 >> shamt)[31:0] (logical shift)
                   $display("%x: SRLIW r%0d", pc, instruction[11:7]);
                   temp5 = instruction[24:20];
-                  temp_result = $unsigned(registers[instruction[19:15]]) >> temp5;
+                  temp_result = $unsigned(registers_temp[instruction[19:15]]) >> temp5;
 
-                  registers[instruction[11:7]] <= $signed(temp_result[31:0]);
+                  result = $signed(temp_result[31:0]);
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0100000) begin
                   // [24:20] shamt [19:15] rs1 [11:7] rd
                   // rd = (rs1 >>> shamt)[31:0] (arithmetic shift)
                   $display("%x: SRAIW r%0d", pc, instruction[11:7]);
                   temp5 = instruction[24:20];
-                  temp_result = $signed(registers[instruction[19:15]]) >>> temp5;
+                  temp_result = $signed(registers_temp[instruction[19:15]]) >>> temp5;
 
-                  registers[instruction[11:7]] <= $signed(temp_result[31:0]);
+                  result = $signed(temp_result[31:0]);
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end
               end
             endcase
@@ -250,19 +294,25 @@ module top
                   // rd = rs1 + rs2
                   $display("%x: ADD r%0d", pc, instruction[11:7]);
 
-                  registers[instruction[11:7]] <= registers[instruction[19:15]] + registers[instruction[24:20]];
+                  result = registers_temp[instruction[19:15]] + registers_temp[instruction[24:20]];
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0100000) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = rs1 - rs2
                   $display("%x: SUB r%0d", pc, instruction[11:7]);
 
-                  registers[instruction[11:7]] <= registers[instruction[19:15]] - registers[instruction[24:20]];
+                  result = registers_temp[instruction[19:15]] - registers_temp[instruction[24:20]];
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0000001) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = rs1 * rs2
                   $display("%x: MUL r%0d", pc, instruction[11:7]);
 
-                  registers[instruction[11:7]] <= registers[instruction[19:15]] * registers[instruction[24:20]];
+                  result = registers_temp[instruction[19:15]] * registers_temp[instruction[24:20]];
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end
               end
               3'b001: begin
@@ -271,13 +321,17 @@ module top
                   // rd = rs1 << rs2 (logical shift)
                   $display("%x: SLL r%0d", pc, instruction[11:7]);
 
-                  registers[instruction[11:7]] <= registers[instruction[19:15]] << registers[instruction[24:20]][5:0];
+                  result = registers_temp[instruction[19:15]] << registers_temp[instruction[24:20]][5:0];
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0000001) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = rs1 * rs2 (the upper 64 bits)
                   $display("%x: MULH r%0d", pc, instruction[11:7]);
 
-                  registers[instruction[11:7]] <= ($signed(registers[instruction[19:15]]) * $signed(registers[instruction[24:20]])) >> 64;
+                  result = ($signed(registers_temp[instruction[19:15]]) * $signed(registers_temp[instruction[24:20]])) >> 64;
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end
               end
               3'b010: begin
@@ -286,36 +340,44 @@ module top
                   // if (rs1 < rs2) then rd = 1 else rd = 0
                   $display("%x: SLT r%0d", pc, instruction[11:7]);
 
-                  if ($signed(registers[instruction[19:15]]) < $signed(registers[instruction[24:20]])) begin
-                    registers[instruction[11:7]] <= 64'b1;
+                  if ($signed(registers_temp[instruction[19:15]]) < $signed(registers_temp[instruction[24:20]])) begin
+                    result = 64'b1;
                   end else begin
-                    registers[instruction[11:7]] <= 64'b0;
+                    result = 64'b0;
                   end
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0000001) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = rs1 * (unsigned) rs2 (the upper 64 bits)
                   $display("%x: MULHSU r%0d", pc, instruction[11:7]);
 
-                  registers[instruction[11:7]] <= ($signed(registers[instruction[19:15]]) * $unsigned(registers[instruction[24:20]])) >> 64;
+                  result = ($signed(registers_temp[instruction[19:15]]) * $unsigned(registers_temp[instruction[24:20]])) >> 64;
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end
               end
               3'b011: begin
                 if (instruction[31:25] == 7'b0000000) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
-                  // if ((unsigned)rs1 < (unsigned)rs2) then rd = 1 else rd = 0 
+                  // if ((unsigned)rs1 < (unsigned)rs2) then rd = 1 else rd = 0
                   $display("%x: SLTU r%0d", pc, instruction[11:7]);
 
-                  if ($unsigned(registers[instruction[19:15]]) < $unsigned(registers[instruction[24:20]])) begin
-                    registers[instruction[11:7]] <= 64'b1;
+                  if ($unsigned(registers_temp[instruction[19:15]]) < $unsigned(registers_temp[instruction[24:20]])) begin
+                    result = 64'b1;
                   end else begin
-                    registers[instruction[11:7]] <= 64'b0;
+                    result = 64'b0;
                   end
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0000001) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = (unsigned) rs1 * (unsigned) rs2 (the upper 64 bits)
                   $display("%x: MULHU r%0d", pc, instruction[11:7]);
 
-                  registers[instruction[11:7]] <= (($unsigned(registers[instruction[19:15]]) * $unsigned(registers[instruction[24:20]])) >> 64);
+                  result = ($unsigned(registers_temp[instruction[19:15]]) * $unsigned(registers_temp[instruction[24:20]])) >> 64;
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end
               end
               3'b100: begin
@@ -324,17 +386,21 @@ module top
                   // rd = rs1 ^ rs2
                   $display("%x: XOR r%0d", pc, instruction[11:7]);
 
-                  registers[instruction[11:7]] <= registers[instruction[19:15]] ^ registers[instruction[24:20]];
+                  result = registers_temp[instruction[19:15]] ^ registers_temp[instruction[24:20]];
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0000001) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = rs1 / rs2
                   $display("%x: DIV r%0d", pc, instruction[11:7]);
 
-                  if (registers[instruction[24:20]] != 0) begin
-                    registers[instruction[11:7]] <= $signed(registers[instruction[19:15]]) / $signed(registers[instruction[24:20]]);
+                  if (registers_temp[instruction[24:20]] != 0) begin
+                    result = $signed(registers_temp[instruction[19:15]]) / $signed(registers_temp[instruction[24:20]]);
                   end else begin
-                    registers[instruction[11:7]] <= 64'b0;
+                    result = -1;
                   end
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end
               end
               3'b101: begin
@@ -343,23 +409,29 @@ module top
                   // rd = rs1 >> rs2 (logical shift)
                   $display("%x: SRL r%0d", pc, instruction[11:7]);
 
-                  registers[instruction[11:7]] <= registers[instruction[19:15]] >> registers[instruction[24:20]][5:0];
+                  result = registers_temp[instruction[19:15]] >> registers_temp[instruction[24:20]][5:0];
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0100000) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = rs1 >>> rs2 (arithmetic shift)
                   $display("%x: SRA r%0d", pc, instruction[11:7]);
 
-                  registers[instruction[11:7]] <= $signed(registers[instruction[19:15]]) >>> registers[instruction[24:20]][5:0];
+                  result = $signed(registers_temp[instruction[19:15]]) >>> registers_temp[instruction[24:20]][5:0];
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0000001) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
-                  // rd = (unsigned) rs1 / (unsigned) rs2 
+                  // rd = (unsigned) rs1 / (unsigned) rs2
                   $display("%x: DIVU r%0d", pc, instruction[11:7]);
 
-                  if (registers[instruction[24:20]] != 0) begin
-                    registers[instruction[11:7]] <= $unsigned(registers[instruction[19:15]]) / $unsigned(registers[instruction[24:20]]);
+                  if (registers_temp[instruction[24:20]] != 0) begin
+                    result = $unsigned(registers_temp[instruction[19:15]]) / $unsigned(registers_temp[instruction[24:20]]);
                   end else begin
-                    registers[instruction[11:7]] <= 64'b0;
+                    result = -1;
                   end
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end
               end
               3'b110: begin
@@ -368,17 +440,21 @@ module top
                   // rd = rs1 | rs2
                   $display("%x: OR r%0d", pc, instruction[11:7]);
 
-                  registers[instruction[11:7]] <= registers[instruction[19:15]] | registers[instruction[24:20]];
+                  result = registers_temp[instruction[19:15]] | registers_temp[instruction[24:20]];
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0000001) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = rs1 % rs2
                   $display("%x: REM r%0d", pc, instruction[11:7]);
 
-                  if (registers[instruction[24:20]] != 0) begin
-                    registers[instruction[11:7]] <= $signed(registers[instruction[19:15]]) % $signed(registers[instruction[24:20]]);
+                  if (registers_temp[instruction[24:20]] != 0) begin
+                    result = $signed(registers_temp[instruction[19:15]]) % $signed(registers_temp[instruction[24:20]]);
                   end else begin
-                    registers[instruction[11:7]] <= 64'b0;
+                    result = registers_temp[instruction[19:15]];
                   end
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end
               end
               3'b111: begin
@@ -387,17 +463,21 @@ module top
                   // rd = rs1 & rs2
                   $display("%x: AND r%0d", pc, instruction[11:7]);
 
-                  registers[instruction[11:7]] <= registers[instruction[19:15]] & registers[instruction[24:20]];
+                  result = registers_temp[instruction[19:15]] & registers_temp[instruction[24:20]];
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0000001) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = (unsigned) rs1 % (unsigned) rs2
                   $display("%x: REMU r%0d", pc, instruction[11:7]);
 
-                  if (registers[instruction[24:20]] != 0) begin
-                    registers[instruction[11:7]] <= $unsigned(registers[instruction[19:15]]) % $unsigned(registers[instruction[24:20]]);
+                  if (registers_temp[instruction[24:20]] != 0) begin
+                    result = $unsigned(registers_temp[instruction[19:15]]) % $unsigned(registers_temp[instruction[24:20]]);
                   end else begin
-                    registers[instruction[11:7]] <= 64'b0;
+                    result = registers_temp[instruction[19:15]];
                   end
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end
               end
             endcase
@@ -409,71 +489,87 @@ module top
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = (rs1 + rs2)[31:0]
                   $display("%x: ADDW r%0d", pc, instruction[11:7]);
-                  temp_result = registers[instruction[19:15]] + registers[instruction[24:20]];
+                  temp_result = registers_temp[instruction[19:15]] + registers_temp[instruction[24:20]];
 
-                  registers[instruction[11:7]] <= $signed(temp_result[31:0]);
+                  result = $signed(temp_result[31:0]);
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0100000) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = (rs1 - rs2)[31:0]
                   $display("%x: SUBW r%0d", pc, instruction[11:7]);
-                  temp_result = registers[instruction[19:15]] - registers[instruction[24:20]];
+                  temp_result = registers_temp[instruction[19:15]] - registers_temp[instruction[24:20]];
 
-                  registers[instruction[11:7]] <= $signed(temp_result[31:0]);
+                  result = $signed(temp_result[31:0]);
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0000001) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = (rs1 * rs2)[31:0]
                   $display("%x: MULW r%0d", pc, instruction[11:7]);
-                  temp_result = registers[instruction[19:15]] * registers[instruction[24:20]];
+                  temp_result = registers_temp[instruction[19:15]] * registers_temp[instruction[24:20]];
 
-                  registers[instruction[11:7]] <= $signed(temp_result[31:0]);
+                  result = $signed(temp_result[31:0]);
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end
               end
               3'b001: begin
                 // [19:15] rs1 [24:20] rs2 [11:7] rd
                 // rd = (rs1 << rs2)[31:0]
                 $display("%x: SLLW r%0d", pc, instruction[11:7]);
-                temp_result = registers[instruction[19:15]] << registers[instruction[24:20]][4:0];
+                temp_result = registers_temp[instruction[19:15]] << registers_temp[instruction[24:20]][4:0];
 
-                registers[instruction[11:7]] <= $signed(temp_result[31:0]);
+                result = $signed(temp_result[31:0]);
+                rd = instruction[11:7];
+                write_enable = 1;
               end
               3'b100: begin
                 // [19:15] rs1 [24:20] rs2 [11:7] rd
                 // rd = (rs1 / rs2)[31:0]
                 $display("%x: DIVW r%0d", pc, instruction[11:7]);
 
-                if (registers[instruction[24:20]] != 0) begin
-                  temp_result = $signed(registers[instruction[19:15]]) / $signed(registers[instruction[24:20]]);
-                  registers[instruction[11:7]] <= $signed(temp_result[31:0]);
+                if (registers_temp[instruction[24:20]] != 0) begin
+                  temp_result = $signed(registers_temp[instruction[19:15]]) / $signed(registers_temp[instruction[24:20]]);
+                  result = $signed(temp_result[31:0]);
                 end else begin
-                  registers[instruction[11:7]] <= 64'b0;
+                  result = -1;
                 end
+                rd = instruction[11:7];
+                write_enable = 1;
               end
               3'b101: begin
                 if (instruction[31:25] == 7'b0000000) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = (rs1 >> rs2)[31:0] (logical shift)
                   $display("%x: SRLW r%0d", pc, instruction[11:7]);
-                  temp_result = $unsigned(registers[instruction[19:15]]) >> registers[instruction[24:20]][4:0];
+                  temp_result = $unsigned(registers_temp[instruction[19:15]]) >> registers_temp[instruction[24:20]][4:0];
 
-                  registers[instruction[11:7]] <= $signed(temp_result[31:0]);
+                  result = $signed(temp_result[31:0]);
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0100000) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = (rs1 >>> rs2)[31:0] (arithmetic shift)
                   $display("%x: SRAW r%0d", pc, instruction[11:7]);
-                  temp_result = $signed(registers[instruction[19:15]]) >>> registers[instruction[24:20]][4:0];
+                  temp_result = $signed(registers_temp[instruction[19:15]]) >>> registers_temp[instruction[24:20]][4:0];
 
-                  registers[instruction[11:7]] <= $signed(temp_result[31:0]);
+                  result = $signed(temp_result[31:0]);
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end else if (instruction[31:25] == 7'b0000001) begin
                   // [19:15] rs1 [24:20] rs2 [11:7] rd
                   // rd = ((unsigned) rs1 / (unsigned) rs2)[31:0]
                   $display("%x: DIVUW r%0d", pc, instruction[11:7]);
 
-                  if (registers[instruction[24:20]] != 0) begin
-                    temp_result = $unsigned(registers[instruction[19:15]]) / $unsigned(registers[instruction[24:20]]);
-                    registers[instruction[11:7]] <= $signed(temp_result[31:0]);
+                  if (registers_temp[instruction[24:20]] != 0) begin
+                    temp_result = $unsigned(registers_temp[instruction[19:15]]) / $unsigned(registers_temp[instruction[24:20]]);
+                    result = $signed(temp_result[31:0]);
                   end else begin
-                    registers[instruction[11:7]] <= 64'b0;
+                    result = -1;
                   end
+                  rd = instruction[11:7];
+                  write_enable = 1;
                 end
               end
               3'b110: begin
@@ -481,24 +577,28 @@ module top
                 // rd = (rs1 % rs2)[31:0]
                 $display("%x: REMW r%0d", pc, instruction[11:7]);
 
-                if (registers[instruction[24:20]] != 0) begin
-                  temp_result = $signed(registers[instruction[19:15]]) % $signed(registers[instruction[24:20]]);
-                  registers[instruction[11:7]] <= $signed(temp_result[31:0]);
+                if (registers_temp[instruction[24:20]] != 0) begin
+                  temp_result = $signed(registers_temp[instruction[19:15]]) % $signed(registers_temp[instruction[24:20]]);
+                  result = $signed(temp_result[31:0]);
                 end else begin
-                  registers[instruction[11:7]] <= 64'b0;
+                  result = registers_temp[instruction[19:15]];
                 end
+                rd = instruction[11:7];
+                write_enable = 1;
               end
               3'b111: begin
                 // [19:15] rs1 [24:20] rs2 [11:7] rd
                 // rd = ((unsigned) rs1 % (unsigned) rs2)[31:0]
                 $display("%x: REMUW r%0d", pc, instruction[11:7]);
 
-                if (registers[instruction[24:20]] != 0) begin
-                  temp_result = $unsigned(registers[instruction[19:15]]) % $unsigned(registers[instruction[24:20]]);
-                  registers[instruction[11:7]] <= $signed(temp_result[31:0]);
+                if (registers_temp[instruction[24:20]] != 0) begin
+                  temp_result = $unsigned(registers_temp[instruction[19:15]]) % $unsigned(registers_temp[instruction[24:20]]);
+                  result = $signed(temp_result[31:0]);
                 end else begin
-                  registers[instruction[11:7]] <= 64'b0;
+                  result = registers_temp[instruction[19:15]];
                 end
+                rd = instruction[11:7];
+                write_enable = 1;
               end
             endcase
           end
@@ -507,7 +607,9 @@ module top
             // rd = imm << 12
             $display("%x: LUI r%0d", pc, instruction[11:7]);
 
-            registers[instruction[11:7]] <= {instruction[31:12], 12'b0};
+            result = {instruction[31:12], 12'b0};
+            rd = instruction[11:7];
+            write_enable = 1;
           end
           7'b0100011: begin
             case (instruction[14:12])
@@ -516,6 +618,7 @@ module top
               3'b010: $display("%x: SW", pc);
               3'b011: $display("%x: SD", pc);
             endcase
+            write_enable = 0;
           end
           7'b1100011: begin
             case (instruction[14:12])
@@ -526,24 +629,36 @@ module top
               3'b110: $display("%x: BLTU", pc);
               3'b111: $display("%x: BGEU", pc);
             endcase
+            write_enable = 0;
           end
-          7'b1101111: $display("%x: JAL r%0d", pc, instruction[11:7]);
-          7'b1100111: $display("%x: JALR r%0d", pc, instruction[11:7]);
-          default: $display("Unknown instruction: 0x%x", instruction);
+          7'b1101111: begin
+            $display("%x: JAL r%0d", pc, instruction[11:7]);
+            result = pc + 4;
+            rd = instruction[11:7];
+            write_enable = 1;
+          end
+          7'b1100111: begin
+            $display("%x: JALR r%0d", pc, instruction[11:7]);
+            result = pc + 4;
+            rd = instruction[11:7];
+            write_enable = 1;
+          end
+          default: begin
+            $display("Unknown instruction: 0x%x", instruction);
+            write_enable = 0;
+          end
         endcase
 
         // NOTE: Commented this section out for visual comparison
         //    test progX.o test cases
         // 
         for (count = 0; count < 32; count = count + 1) begin
-          $display("r%0d: %h", count, registers[count]);
+          $display("r%0d: %h", count, registers_temp[count]);
         end
 
       end
     end
   endtask
-
-  integer count;
 
   always_ff @ (posedge clk)
     if (reset) begin
@@ -558,6 +673,10 @@ module top
       end
     end else begin
       //$display("pc: %x, araddr: %x, arburst: %b, arlen: %d", pc, m_axi_araddr, m_axi_arburst, m_axi_arlen);
+
+      for (count = 0; count < 32; count = count + 1) begin
+        registers_temp[count] = registers[count];
+      end
       
       if (!m_axi_arvalid && !m_axi_rvalid && !receive_ready && !receive_processing) begin
         m_axi_araddr  <= pc;   
@@ -580,8 +699,19 @@ module top
         instruction_low = m_axi_rdata[31:0];
         //$display("Display: %x", m_axi_rdata);
 
-        decode_instruction(instruction_low, pc);
-        decode_instruction(instruction_high, pc + 4);
+        decode_instruction(instruction_low, pc, registers_temp, result, rd, write_enable);
+        if (write_enable && rd != 0) begin
+          registers_temp[rd] = result;
+        end
+
+        decode_instruction(instruction_high, pc + 4, registers_temp, result, rd, write_enable);
+        if (write_enable && rd != 0) begin
+          registers_temp[rd] = result;
+        end
+
+        for (count = 0; count < 32; count = count + 1) begin
+          registers[count] <= registers_temp[count];
+        end
 
         // $display("Display: %x", m_axi_rlast);
 
