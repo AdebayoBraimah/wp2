@@ -86,6 +86,46 @@ module top
 
   integer count;
 
+  task display_reg_name(input [4:0] reg_num);
+  begin
+      case (reg_num)
+          5'b00000: $write("zero");  // x0
+          5'b00001: $write("ra");    // x1 (Return Address)
+          5'b00010: $write("sp");    // x2 (Stack Pointer)
+          5'b00011: $write("gp");    // x3 (Global Pointer)
+          5'b00100: $write("tp");    // x4 (Thread Pointer)
+          5'b00101: $write("t0");    // x5 (Temporary Register 0)
+          5'b00110: $write("t1");    // x6 (Temporary Register 1)
+          5'b00111: $write("t2");    // x7 (Temporary Register 2)
+          5'b01000: $write("s0");    // x8 (Saved Register 0 / Frame Pointer)
+          5'b01001: $write("s1");    // x9 (Saved Register 1)
+          5'b01010: $write("a0");   // x10 (Function Argument / Return Value 0)
+          5'b01011: $write("a1");   // x11 (Function Argument / Return Value 1)
+          5'b01100: $write("a2");   // x12 (Function Argument 2)
+          5'b01101: $write("a3");   // x13 (Function Argument 3)
+          5'b01110: $write("a4");   // x14 (Function Argument 4)
+          5'b01111: $write("a5");   // x15 (Function Argument 5)
+          5'b10000: $write("a6");   // x16 (Function Argument 6)
+          5'b10001: $write("a7");   // x17 (Function Argument 7)
+          5'b10010: $write("s2");   // x18 (Saved Register 2)
+          5'b10011: $write("s3");   // x19 (Saved Register 3)
+          5'b10100: $write("s4");   // x20 (Saved Register 4)
+          5'b10101: $write("s5");   // x21 (Saved Register 5)
+          5'b10110: $write("s6");   // x22 (Saved Register 6)
+          5'b10111: $write("s7");   // x23 (Saved Register 7)
+          5'b11000: $write("s8");   // x24 (Saved Register 8)
+          5'b11001: $write("s9");   // x25 (Saved Register 9)
+          5'b11010: $write("s10");  // x26 (Saved Register 10)
+          5'b11011: $write("s11");  // x27 (Saved Register 11)
+          5'b11100: $write("t3");   // x28 (Temporary Register 3)
+          5'b11101: $write("t4");   // x29 (Temporary Register 4)
+          5'b11110: $write("t5");   // x30 (Temporary Register 5)
+          5'b11111: $write("t6");   // x31 (Temporary Register 6)
+          default: $write("unknown ");     // Unknown register
+      endcase
+  end
+  endtask
+
   task decode_instruction;
     input [31:0] instruction;
     input [63:0] pc;
@@ -652,8 +692,13 @@ module top
         // NOTE: Commented this section out for visual comparison
         //    test progX.o test cases
         // 
-        for (count = 0; count < 32; count = count + 1) begin
-          $display("r%0d: %h", count, registers_temp[count]);
+        // $display("\n");
+        for (count = 0; count < 32; count = count + 1) begin       
+          $write("r%0d (", count);
+          display_reg_name(count);
+          $write(") : %h (decimal: %0d)", registers_temp[count], registers_temp[count]);
+
+          $display("\n");
         end
 
       end
